@@ -67,6 +67,8 @@ build: ## Setup infrastructure (deps + docker + migrations)
 		exit 1; \
 	fi
 	@echo -e "$(GREEN)Root .env found$(RESET)"
+	@ln -sf ../../.env $(BACKEND_DIR)/.env
+	@echo -e "$(GREEN)Backend .env symlinked$(RESET)"
 	@echo ""
 	@echo -e "$(CYAN)Step 2/4: Installing dependencies...$(RESET)"
 	@cd $(BACKEND_DIR) && uv sync
@@ -148,7 +150,7 @@ test: test-backend test-frontend ## Run all tests (backend + frontend)
 lint-backend: ## Lint backend code
 	@echo -e "$(CYAN)Linting backend code...$(RESET)"
 	@cd $(BACKEND_DIR) && uv run ruff check .
-	@cd $(BACKEND_DIR) && uv run black --check .
+	@cd $(BACKEND_DIR) && uv run ruff format --check .
 	@cd $(BACKEND_DIR) && uv run mypy .
 	@echo -e "$(GREEN)Backend lint passed$(RESET)"
 
@@ -163,7 +165,7 @@ lint: lint-backend lint-frontend ## Run all linters (backend + frontend)
 
 format: ## Auto-fix formatting (backend + frontend)
 	@echo -e "$(CYAN)Formatting backend code...$(RESET)"
-	@cd $(BACKEND_DIR) && uv run black .
+	@cd $(BACKEND_DIR) && uv run ruff format .
 	@cd $(BACKEND_DIR) && uv run ruff check . --fix
 	@echo -e "$(GREEN)Backend formatted$(RESET)"
 	@echo -e "$(CYAN)Formatting frontend code...$(RESET)"
