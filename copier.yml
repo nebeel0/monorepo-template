@@ -11,6 +11,7 @@ _exclude:
     - "__pycache__"
     - ".git"
     - ".DS_Store"
+    - "/.github/workflows/template-tests.yml"
 
 _tasks:
     - "git init"

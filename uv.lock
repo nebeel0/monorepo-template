@@ -171,6 +171,7 @@ source = { virtual = "." }
 dev = [
     { name = "copier" },
     { name = "pytest" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
@@ -179,6 +180,7 @@ dev = [
 dev = [
     { name = "copier", specifier = ">=9.0.0" },
     { name = "pytest", specifier = ">=8.3.0" },
+    { name = "pyyaml", specifier = ">=6.0.0" },
 ]
 
 [[package]]

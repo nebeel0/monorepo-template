@@ -1,3 +1,4 @@
+{% raw %}
 name: CI
 
 on:
@@ -34,9 +35,9 @@ jobs:
         working-directory: apps/backend
         run: uv run ruff check .
 
-      - name: Run black
+      - name: Run ruff format check
         working-directory: apps/backend
-        run: uv run black --check .
+        run: uv run ruff format --check .
 
       - name: Run mypy
         working-directory: apps/backend
@@ -47,14 +48,28 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      postgres:
+      postgres-app:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
-          POSTGRES_DB: test_db
+          POSTGRES_DB: test_app_db
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      postgres-users:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_users_db
+        ports:
+          - 5433:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -89,7 +104,8 @@ jobs:
       - name: Run tests with coverage
         working-directory: apps/backend
         env:
-          DB_URL: postgresql+asyncpg://test:test@localhost:5432/test_db
+          APP_DB_URL: postgresql+asyncpg://test:test@localhost:5432/test_app_db
+          USERS_DB_URL: postgresql+asyncpg://test:test@localhost:5433/test_users_db
           REDIS_URL: redis://localhost:6379/0
           SECRET: test-secret-key-for-ci
         run: uv run pytest --cov=app --cov=core --cov-report=xml --cov-fail-under=80
@@ -157,3 +173,4 @@ jobs:
       - name: Build web
         working-directory: apps/frontend
         run: flutter build web --release
+{% endraw %}

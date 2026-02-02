@@ -2,40 +2,45 @@
 
 Verifies that `copier copy` generates a correct project with all template
 variables substituted, proper directory structure, and no leftover artifacts.
+
+Best practices applied:
+- Session-scoped fixture: template generated once, shared across read-only tests
+- Function-scoped fixtures only for tests needing different template data
+- YAML/TOML parse validity tests
+- .copier-answers.yml verification
+- Generated CI content validation
 """
 
 from __future__ import annotations
 
-import os
 import subprocess
+import tomllib
 from pathlib import Path
 
 import pytest
+import yaml
 from copier import run_copy
 
 TEMPLATE_ROOT = Path(__file__).resolve().parent.parent
 
+DEFAULT_DATA = {
+    "project_name": "Test Project",
+    "project_slug": "test_project",
+    "project_description": "A test project for CI",
+    "author_name": "CI Bot",
+}
+
 # ── Fixtures ────────────────────────────────────────────────────────────────
 
 
-@pytest.fixture()
-def default_data() -> dict[str, str]:
-    return {
-        "project_name": "Test Project",
-        "project_slug": "test_project",
-        "project_description": "A test project for CI",
-        "author_name": "CI Bot",
-    }
-
-
-@pytest.fixture()
-def generated_project(tmp_path: Path, default_data: dict[str, str]) -> Path:
-    """Generate a project into a temp directory and return its path."""
-    dst = tmp_path / "output"
+@pytest.fixture(scope="session")
+def generated_project(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Generate a project once, shared across all read-only tests."""
+    dst = tmp_path_factory.mktemp("output")
     run_copy(
         str(TEMPLATE_ROOT),
         str(dst),
-        data=default_data,
+        data=DEFAULT_DATA,
         vcs_ref="HEAD",
         defaults=True,
         unsafe=True,
@@ -190,6 +195,12 @@ class TestExcludedArtifacts:
         assert not (generated_project / "pyproject.toml").exists()
         # apps/backend/pyproject.toml must still exist
         assert (generated_project / "apps/backend/pyproject.toml").is_file()
+
+    def test_no_template_ci_workflow(self, generated_project: Path) -> None:
+        """Template CI workflow should not appear in generated project."""
+        assert not (generated_project / ".github/workflows/template-tests.yml").exists()
+        # Generated project CI must exist
+        assert (generated_project / ".github/workflows/ci.yml").is_file()
 
 
 # ── No Myapp Remnants ───────────────────────────────────────────────────────
@@ -352,6 +363,80 @@ class TestNonTemplatedFiles:
         assert source.read_text() == generated.read_text(), (
             f"{rel_path} differs from template source"
         )
+
+
+# ── Config File Validity ──────────────────────────────────────────────────
+
+
+class TestConfigValidity:
+    """Generated config files parse without errors."""
+
+    def test_pyproject_toml_parses(self, generated_project: Path) -> None:
+        path = generated_project / "apps/backend/pyproject.toml"
+        with open(path, "rb") as f:
+            data = tomllib.load(f)
+        assert data["project"]["name"] == "test_project-backend"
+        assert "fastapi" in str(data["project"]["dependencies"])
+
+    def test_docker_compose_yml_parses(self, generated_project: Path) -> None:
+        path = generated_project / "docker-compose.yml"
+        data = yaml.safe_load(path.read_text())
+        assert "services" in data
+
+    def test_docker_compose_prod_yml_parses(self, generated_project: Path) -> None:
+        path = generated_project / "docker-compose.prod.yml"
+        data = yaml.safe_load(path.read_text())
+        assert "services" in data
+
+    def test_pubspec_yaml_parses(self, generated_project: Path) -> None:
+        path = generated_project / "apps/frontend/pubspec.yaml"
+        data = yaml.safe_load(path.read_text())
+        assert data["name"] == "test_project"
+
+    def test_ci_yml_parses(self, generated_project: Path) -> None:
+        path = generated_project / ".github/workflows/ci.yml"
+        data = yaml.safe_load(path.read_text())
+        assert "jobs" in data
+
+    def test_analysis_options_parses(self, generated_project: Path) -> None:
+        path = generated_project / "apps/frontend/analysis_options.yaml"
+        data = yaml.safe_load(path.read_text())
+        assert data is not None
+
+    def test_pre_commit_config_parses(self, generated_project: Path) -> None:
+        path = generated_project / ".pre-commit-config.yaml"
+        data = yaml.safe_load(path.read_text())
+        assert "repos" in data
+
+
+# ── Generated CI Workflow ──────────────────────────────────────────────────
+
+
+class TestGeneratedCI:
+    """Generated CI workflow has correct dual-DB and modern tooling config."""
+
+    def test_ci_has_dual_postgres_services(self, generated_project: Path) -> None:
+        content = (generated_project / ".github/workflows/ci.yml").read_text()
+        assert "postgres-app:" in content
+        assert "postgres-users:" in content
+
+    def test_ci_has_dual_db_env_vars(self, generated_project: Path) -> None:
+        content = (generated_project / ".github/workflows/ci.yml").read_text()
+        assert "APP_DB_URL:" in content
+        assert "USERS_DB_URL:" in content
+
+    def test_ci_uses_ruff_not_black(self, generated_project: Path) -> None:
+        content = (generated_project / ".github/workflows/ci.yml").read_text()
+        assert "ruff check" in content
+        assert "ruff format" in content
+        assert "black" not in content
+
+    def test_ci_has_all_job_types(self, generated_project: Path) -> None:
+        data = yaml.safe_load(
+            (generated_project / ".github/workflows/ci.yml").read_text()
+        )
+        jobs = set(data["jobs"].keys())
+        assert jobs == {"backend-lint", "backend-test", "frontend-test", "frontend-build"}
 
 
 # ── Default Slug Derivation ────────────────────────────────────────────────
