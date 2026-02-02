@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
-import 'package:myapp/core/utils/environment.dart';
+import 'package:{{ project_slug }}/core/utils/environment.dart';
 
 // Conditional imports for platform-specific setup
-import 'package:myapp/core/client/mobile.dart'
-    if (dart.library.html) 'package:myapp/core/client/web.dart';
+import 'package:{{ project_slug }}/core/client/mobile.dart'
+    if (dart.library.html) 'package:{{ project_slug }}/core/client/web.dart';
 
 /// Create a configured Dio client for the app.
 ///

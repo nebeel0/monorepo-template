@@ -1,0 +1,38 @@
+_min_copier_version: "9.0.0"
+_templates_suffix: .jinja
+_answers_file: .copier-answers.yml
+
+_exclude:
+    - "copier.yml"
+    - "*.pyc"
+    - "__pycache__"
+    - ".git"
+    - ".DS_Store"
+
+_tasks:
+    - "git init"
+    - "cp .env.example .env"
+
+# =============================================================================
+# Template Questions
+# =============================================================================
+
+project_name:
+    type: str
+    help: Your project name (e.g., "My Awesome App")
+    validator: "{% if not project_name %}Project name is required{% endif %}"
+
+project_slug:
+    type: str
+    help: Package name for Python and Dart (lowercase, underscores only)
+    default: "{{ project_name | lower | replace('-', '_') | replace(' ', '_') }}"
+
+project_description:
+    type: str
+    help: Short project description
+    default: "A FastAPI + Flutter monorepo"
+
+author_name:
+    type: str
+    help: Author name (for pyproject.toml)
+    default: ""

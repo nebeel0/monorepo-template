@@ -2,14 +2,14 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "myapp"
+    APP_NAME: str = "{{ project_slug }}"
     APP_PORT: int = 8000
     IS_LOCAL: bool = True
     DEBUG: bool = False
 
     # Databases
-    APP_DB_URL: str = "postgresql+asyncpg://myapp:myapp_dev@localhost:5434/myapp_app_db"
-    USERS_DB_URL: str = "postgresql+asyncpg://myapp:myapp_dev@localhost:5435/myapp_users_db"
+    APP_DB_URL: str = "postgresql+asyncpg://{{ project_slug }}:{{ project_slug }}_dev@localhost:5434/{{ project_slug }}_app_db"
+    USERS_DB_URL: str = "postgresql+asyncpg://{{ project_slug }}:{{ project_slug }}_dev@localhost:5435/{{ project_slug }}_users_db"
 
     # Redis
     REDIS_URL: str = "redis://localhost:6381/0"
