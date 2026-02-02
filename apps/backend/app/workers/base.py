@@ -1,6 +1,7 @@
 """Base worker class for periodic background tasks."""
 
 import asyncio
+import contextlib
 import logging
 from abc import ABC, abstractmethod
 from typing import Any
@@ -42,10 +43,8 @@ class BaseWorker(ABC):
         self._running = False
         if self._task:
             self._task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._task
-            except asyncio.CancelledError:
-                pass
         logger.info("Worker %s stopped", self.name)
 
     async def _run_loop(self) -> None:

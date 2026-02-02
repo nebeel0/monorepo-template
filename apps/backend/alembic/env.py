@@ -1,8 +1,8 @@
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import create_engine
 
+from alembic import context
 from core.config import settings
 from core.schemas.base import AppDBModel, UserManagementDBModel
 

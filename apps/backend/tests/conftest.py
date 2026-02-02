@@ -1,6 +1,5 @@
 import uuid
 from collections.abc import AsyncGenerator
-from functools import cache
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -10,7 +9,6 @@ from app.main import app
 from core.config import settings
 from core.database import get_app_db_session, get_users_db_session
 from core.schemas.base import AppDBModel, UserManagementDBModel
-
 
 # ---------------------------------------------------------------------------
 # Test database engines (use separate schemas for isolation)
@@ -41,7 +39,9 @@ async def app_db_session(app_db_engine) -> AsyncGenerator[AsyncSession, None]:
         await conn.run_sync(AppDBModel.metadata.create_all)
         await conn.commit()
 
-    session_maker = async_sessionmaker(bind=app_db_engine, class_=AsyncSession, expire_on_commit=False)
+    session_maker = async_sessionmaker(
+        bind=app_db_engine, class_=AsyncSession, expire_on_commit=False
+    )
     async with session_maker() as session:
         await session.execute(type(session).text(f'SET search_path TO "{schema_name}"'))
         yield session
@@ -60,7 +60,9 @@ async def users_db_session(users_db_engine) -> AsyncGenerator[AsyncSession, None
         await conn.run_sync(UserManagementDBModel.metadata.create_all)
         await conn.commit()
 
-    session_maker = async_sessionmaker(bind=users_db_engine, class_=AsyncSession, expire_on_commit=False)
+    session_maker = async_sessionmaker(
+        bind=users_db_engine, class_=AsyncSession, expire_on_commit=False
+    )
     async with session_maker() as session:
         await session.execute(type(session).text(f'SET search_path TO "{schema_name}"'))
         yield session

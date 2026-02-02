@@ -4,10 +4,14 @@ from functools import cache
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from core.config import settings
-
 
 # ---------------------------------------------------------------------------
 # Engine factories (cached singletons)
@@ -43,9 +47,7 @@ def get_users_db_engine() -> AsyncEngine:
 
 @cache
 def get_app_db_session_maker() -> async_sessionmaker[AsyncSession]:
-    return async_sessionmaker(
-        bind=get_app_db_engine(), class_=AsyncSession, expire_on_commit=False
-    )
+    return async_sessionmaker(bind=get_app_db_engine(), class_=AsyncSession, expire_on_commit=False)
 
 
 @cache
