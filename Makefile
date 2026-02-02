@@ -5,6 +5,7 @@
 .PHONY: hooks hooks-install hooks-update hooks-run
 .PHONY: watch kill ports smoke-test
 .PHONY: e2e-build e2e-test e2e-test-headed e2e-up e2e-down e2e-report
+.PHONY: openapi workers
 
 # Use bash for echo -e support
 SHELL := /bin/bash
@@ -37,7 +38,7 @@ help: ## Show this help message
 	@echo "  make frontend           Run Flutter web (localhost:3000)"
 	@echo ""
 	@echo -e "$(GREEN)Development:$(RESET)"
-	@grep -E '^(build|install|dev|backend|frontend|watch):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-18s$(RESET) %s\n", $$1, $$2}'
+	@grep -E '^(build|install|dev|backend|frontend|watch|openapi|workers):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-18s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo -e "$(GREEN)Testing & Quality:$(RESET)"
 	@grep -E '^(test|lint|format|analyze|coverage|ci|smoke-test):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-18s$(RESET) %s\n", $$1, $$2}'
@@ -117,6 +118,15 @@ frontend: ## Run Flutter web app (port 3000)
 watch: ## Watch mode for frontend code generation (Freezed, json_serializable)
 	@echo -e "$(CYAN)Starting code generation watcher...$(RESET)"
 	@cd $(FRONTEND_DIR) && dart run build_runner watch --delete-conflicting-outputs
+
+openapi: ## Regenerate OpenAPI schema and Dart client from backend
+	@echo -e "$(CYAN)Regenerating OpenAPI client...$(RESET)"
+	@cd $(BACKEND_DIR) && uv run python ../../scripts/regenerate_openapi.py
+	@echo -e "$(GREEN)OpenAPI client regenerated$(RESET)"
+
+workers: ## Run background workers (standalone process)
+	@echo -e "$(CYAN)Starting background workers...$(RESET)"
+	cd $(BACKEND_DIR) && uv run python -m app.workers.run
 
 #==============================================================================
 # TESTING & QUALITY
@@ -245,8 +255,11 @@ ports: ## Check development port status
 	@echo -e "$(YELLOW)Frontend (3000):$(RESET)"
 	@lsof -i:3000 2>/dev/null || echo "  Available"
 	@echo ""
-	@echo -e "$(YELLOW)PostgreSQL (5434):$(RESET)"
+	@echo -e "$(YELLOW)PostgreSQL App DB (5434):$(RESET)"
 	@lsof -i:5434 2>/dev/null || echo "  Available"
+	@echo ""
+	@echo -e "$(YELLOW)PostgreSQL Users DB (5435):$(RESET)"
+	@lsof -i:5435 2>/dev/null || echo "  Available"
 	@echo ""
 	@echo -e "$(YELLOW)Redis (6381):$(RESET)"
 	@lsof -i:6381 2>/dev/null || echo "  Available"

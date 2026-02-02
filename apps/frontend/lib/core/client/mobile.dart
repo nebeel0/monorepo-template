@@ -1,0 +1,32 @@
+import 'package:dio/dio.dart';
+import 'package:myapp/core/services/storage_service.dart';
+
+/// Mobile-specific client setup — uses Bearer token authentication.
+void setupClient(Dio dio) {
+  dio.interceptors.add(AuthInterceptor());
+}
+
+class AuthInterceptor extends Interceptor {
+  final StorageService _storage = StorageService();
+
+  @override
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    final token = await _storage.getAuthToken();
+    if (token != null) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+    handler.next(options);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
+    if (err.response?.statusCode == 401) {
+      // Token expired — clear and redirect to login
+      await _storage.deleteAuthToken();
+    }
+    handler.next(err);
+  }
+}

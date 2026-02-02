@@ -8,10 +8,11 @@ Monorepo combining a Python FastAPI backend with a Flutter cross-platform fronte
 
 ```
 apps/
-  backend/       # FastAPI + SQLAlchemy + PostgreSQL
-  frontend/      # Flutter + Riverpod + Freezed
+  backend/       # FastAPI + SQLAlchemy + Dual PostgreSQL
+  frontend/      # Flutter + Riverpod + OpenAPI client
 packages/
   shared/        # Shared libraries
+scripts/         # Code generation (OpenAPI)
 e2e/             # Playwright E2E tests
 ```
 
@@ -19,8 +20,9 @@ e2e/             # Playwright E2E tests
 
 | Layer    | Technology                     |
 |----------|--------------------------------|
-| Backend  | FastAPI, SQLAlchemy 2.0, PostgreSQL 16, Redis 7 |
-| Frontend | Flutter 3.x, Riverpod, Freezed, go_router |
+| Backend  | FastAPI, SQLAlchemy 2.0, Dual PostgreSQL 16, Redis 7, fastapi-users |
+| Frontend | Flutter 3.x, Riverpod, OpenAPI auto-gen client, go_router |
+| Auth     | Cookie (web) + Bearer (mobile) + Google OAuth |
 | Tooling  | UV, Makefile, Docker Compose, pre-commit |
 | CI/CD    | GitHub Actions                 |
 
@@ -57,6 +59,7 @@ make help        # Show all available commands
 make build       # Setup infrastructure (deps + docker + migrations)
 make backend     # Run backend API (port 8000)
 make frontend    # Run Flutter web (port 3000)
+make workers     # Run background workers
 make test        # Run all tests
 make lint        # Run all linters
 make format      # Auto-format code
@@ -72,9 +75,10 @@ make migrate-create MSG="add users"    # Create new migration
 make migrate-history                   # Show migration history
 ```
 
-### Code Generation (Frontend)
+### Code Generation
 
 ```bash
+make openapi     # Regenerate OpenAPI Dart client from backend
 make watch       # Watch mode for Freezed/json_serializable
 ```
 

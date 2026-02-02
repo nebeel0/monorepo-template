@@ -1,0 +1,30 @@
+import 'package:dio/dio.dart';
+import 'package:myapp/core/utils/environment.dart';
+
+// Conditional imports for platform-specific setup
+import 'package:myapp/core/client/mobile.dart'
+    if (dart.library.html) 'package:myapp/core/client/web.dart';
+
+/// Create a configured Dio client for the app.
+///
+/// Uses platform-specific setup:
+/// - Web: BrowserHttpClientAdapter with cookie support
+/// - Mobile: Bearer token interceptor from secure storage
+Dio createAppClient() {
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: Environment.apiBaseUrl,
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 60),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    ),
+  );
+
+  // Apply platform-specific configuration
+  setupClient(dio);
+
+  return dio;
+}

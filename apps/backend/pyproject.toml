@@ -13,9 +13,11 @@ dependencies = [
     "pydantic>=2.10.0",
     "pydantic-settings>=2.6.0",
     "redis>=5.2.0",
-    "fastapi-users[sqlalchemy]>=13.0.0",
+    "fastapi-users[sqlalchemy,oauth]>=13.0.0",
     "httpx>=0.28.0",
+    "httpx-oauth>=0.15.0",
     "python-multipart>=0.0.12",
+    "psycopg2-binary>=2.9.0",
 ]
 
 [build-system]
@@ -98,5 +100,5 @@ disallow_untyped_defs = true
 exclude = ["alembic/versions", "scripts", "tests"]
 
 [[tool.mypy.overrides]]
-module = ["fastapi_users.*", "asyncpg.*"]
+module = ["fastapi_users.*", "asyncpg.*", "httpx_oauth.*"]
 ignore_missing_imports = true

@@ -1,0 +1,71 @@
+services:
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      APP_DB_URL: postgresql+asyncpg://${APP_DB_USER}:${APP_DB_PASSWORD}@db_app:5432/${APP_DB_NAME}
+      USERS_DB_URL: postgresql+asyncpg://${USERS_DB_USER}:${USERS_DB_PASSWORD}@db_users:5432/${USERS_DB_NAME}
+      REDIS_URL: redis://redis:6379/0
+      IS_LOCAL: "false"
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    depends_on:
+      db_app:
+        condition: service_healthy
+      db_users:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  db_app:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${APP_DB_USER}
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
+      POSTGRES_DB: ${APP_DB_NAME}
+    volumes:
+      - app_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${APP_DB_USER} -d ${APP_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db_users:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${USERS_DB_USER}
+      POSTGRES_PASSWORD: ${USERS_DB_PASSWORD}
+      POSTGRES_DB: ${USERS_DB_NAME}
+    volumes:
+      - users_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USERS_DB_USER} -d ${USERS_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: >
+      redis-server
+      --maxmemory 2gb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  app_db_data:
+  users_db_data:
+  redis_data:
