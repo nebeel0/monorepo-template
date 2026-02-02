@@ -1,0 +1,14 @@
+[project]
+name = "monorepo-template"
+version = "0.1.0"
+description = "Copier template for FastAPI + Flutter monorepos"
+requires-python = ">=3.12"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.0",
+    "copier>=9.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -4,6 +4,9 @@ _answers_file: .copier-answers.yml
 
 _exclude:
     - "copier.yml"
+    - "/pyproject.toml"
+    - "/tests/"
+    - "/uv.lock"
     - "*.pyc"
     - "__pycache__"
     - ".git"
